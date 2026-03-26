@@ -1,0 +1,21 @@
+torch
+transformers>=4.30.0
+datasets
+scikit-learn
+pandas
+numpy
+spacy
+fastapi
+uvicorn
+requests
+adversarial-robustness-toolbox
+mlflow
+pydantic
+
+# Advanced URL analysis
+tldextract>=3.4.4
+python-whois>=0.8.0
+dnspython>=2.4.0
+pyOpenSSL>=23.2.0
+python-Levenshtein>=0.21.1
+cachetools>=5.3.1
