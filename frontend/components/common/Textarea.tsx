@@ -18,12 +18,14 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {(label || (showCount && maxLength)) && (
           <div className="flex justify-between items-center mb-2">
             {label && (
-              <label className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+              <label className="text-xs font-semibold tracking-wider uppercase"
+                style={{ color: '#00f0ff', fontFamily: 'var(--font-heading)' }}
+              >
                 {label}
               </label>
             )}
             {showCount && maxLength && (
-              <span className="text-xs tabular-nums" style={{ color: 'var(--muted-foreground)' }}>
+              <span className="text-xs tabular-nums" style={{ color: 'var(--muted-foreground)', fontFamily: 'var(--font-heading)' }}>
                 {currentLength.toLocaleString()} / {maxLength.toLocaleString()}
               </span>
             )}
@@ -33,11 +35,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           maxLength={maxLength}
           value={value}
-          className={`input-base resize-none ${error ? 'border-[#EF4444] focus:ring-[#EF4444]' : ''} ${className}`}
+          className={`input-base resize-none ${error ? 'border-[#ff073a]' : ''} ${className}`}
           {...props}
         />
         {error && (
-          <p className="mt-1.5 text-sm text-[#EF4444] flex items-center gap-1">
+          <p className="mt-1.5 text-sm flex items-center gap-1" style={{ color: '#ff073a' }}>
             <span>⚠</span> {error}
           </p>
         )}

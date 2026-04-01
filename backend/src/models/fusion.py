@@ -1,6 +1,6 @@
 """
 Co-Attention Fusion — cross-modal attention between text and URL features.
-Replaces the simple gated-attention fusion.
+Bridges DistilBERT text embeddings with URLNet URL embeddings.
 """
 
 import torch
@@ -11,7 +11,7 @@ class CoAttentionFusion(nn.Module):
     """
     Multi-head cross-attention fusion.
 
-    Text (768-d) and URL (256-d) are projected to a common dimension,
+    DistilBERT (768-d) and URLNet (256-d) are projected to a common dimension,
     then attend to each other via multi-head attention.  Residual
     connections + layer normalisation + a feed-forward network produce
     the final fused representation.
@@ -72,8 +72,8 @@ class CoAttentionFusion(nn.Module):
     ) -> torch.Tensor:
         """
         Args:
-            text_features: (B, 768)
-            url_features:  (B, 256)
+            text_features: (B, 768)  — from DistilBERT
+            url_features:  (B, 256)  — from URLNet
         Returns:
             (B, 512) fused representation
         """

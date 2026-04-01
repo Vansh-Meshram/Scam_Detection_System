@@ -20,7 +20,7 @@ from src.self_learning.feedback_store import store_feedback
 
 app = FastAPI(
     title="Scam Detection API",
-    description="Multi-modal Phishing & Scam Detection API (DeBERTa-v3 + URLNet + Co-Attention)",
+    description="Multi-modal Phishing & Scam Detection API (DistilBERT + URLNet + Co-Attention)",
 )
 
 # CORS middleware for Next.js frontend

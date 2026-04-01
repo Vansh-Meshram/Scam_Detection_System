@@ -1,11 +1,10 @@
 """
 Advanced Phishing Detector — complete integrated model.
-Replaces the old fusion_model.py.
 
 Architecture:
-    Text → DeBERTa-v3 (768-d) ┐
-                               ├→ Co-Attention (512-d) → Classifier → 1-d logit
-    URL  → URLNet     (256-d) ┘
+    Text → DistilBERT  (768-d) ┐
+                                ├→ Co-Attention (512-d) → Classifier → 1-d logit
+    URL  → URLNet      (256-d) ┘
 """
 
 import torch
@@ -18,20 +17,20 @@ from src.models.fusion import CoAttentionFusion
 
 class AdvancedPhishingDetector(nn.Module):
     """
-    State-of-the-art multi-modal phishing / scam detector.
+    Multi-modal phishing / scam detector with calibrated confidence.
 
     Combines:
-        • DeBERTa-v3  text encoder   (768-d mean-pooled)
-        • URLNet      URL encoder    (256-d)
+        • DistilBERT text encoder   (768-d mean-pooled)
+        • URLNet      URL encoder   (256-d)
         • Co-Attention fusion        (512-d)
-        • MLP classifier             → 1 logit
+        • MLP classifier + temperature scaling → 1 logit
     """
 
     def __init__(
         self,
         url_word_vocab_size: int = 10000,
         num_url_features: int = 18,
-        text_model_name: str = "microsoft/deberta-v3-base",
+        text_model_name: str = "distilbert-base-uncased",
     ):
         super().__init__()
 
@@ -47,16 +46,22 @@ class AdvancedPhishingDetector(nn.Module):
             text_dim=768, url_dim=256, common_dim=512,
         )  # → 512
 
-        # ── Classifier head ──────────────────────────────────
+        # ── Classifier head with deeper capacity ─────────────
         self.classifier = nn.Sequential(
             nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.GELU(),
             nn.Dropout(0.3),
-            nn.Linear(256, 64),
-            nn.ReLU(),
+            nn.Linear(256, 128),
+            nn.GELU(),
             nn.Dropout(0.2),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.1),
             nn.Linear(64, 1),
         )
+
+        # ── Temperature scaling for calibrated probabilities ─
+        self.temperature = nn.Parameter(torch.ones(1) * 1.5)
 
         self.noise_std = 0.01  # adversarial noise magnitude
 
@@ -96,9 +101,12 @@ class AdvancedPhishingDetector(nn.Module):
         fused = self.fusion(text_features, url_features)  # (B, 512)
         logits = self.classifier(fused)                   # (B, 1)
 
+        # Temperature-scaled sigmoid for calibrated confidence
+        scaled_logits = logits / self.temperature.clamp(min=0.1)
+
         return {
             "logits": logits,
-            "binary_prob": torch.sigmoid(logits),
+            "binary_prob": torch.sigmoid(scaled_logits),
             "text_features": text_features,
             "url_features": url_features,
         }
@@ -110,9 +118,10 @@ class AdvancedPhishingDetector(nn.Module):
     def predict(self, text, url, tokenizer, url_tokenizer, url_featurizer, device="cpu"):
         """
         High-level predict method for a single (text, url) pair.
+        Uses multi-signal calibration for improved confidence accuracy.
 
         Returns:
-            dict with risk_score, is_scam, explanation
+            dict with risk_score, is_scam, explanation, confidence_signals
         """
         self.eval()
         with torch.no_grad():
@@ -142,26 +151,82 @@ class AdvancedPhishingDetector(nn.Module):
                 url_char_indices, url_word_indices, url_features,
             )
 
-            risk_score = outputs["binary_prob"].item()
+            neural_score = outputs["binary_prob"].item()
 
-            # ── Refined Risk Assessment (Fix False Positives) ──
-            # If the URL is an official brand link with SSL and not new, 
-            # we Trust it more than the neural prediction.
+            # ══════════════════════════════════════════════════
+            #  Multi-Signal Confidence Calibration
+            # ══════════════════════════════════════════════════
+            confidence_signals = []
+            url_penalty = 0.0
+            url_trust = 0.0
+
+            # Signal 1: Typosquatting detection
+            if features_dict.get("is_typosquatting", 0):
+                url_penalty += 0.15
+                confidence_signals.append("⚡ Typosquatting detected — domain mimics known brand")
+
+            # Signal 2: New / unestablished domain
+            if features_dict.get("is_new_domain", 0):
+                url_penalty += 0.10
+                confidence_signals.append("⚡ Recently registered domain — no reputation history")
+
+            # Signal 3: Missing SSL
+            if not features_dict.get("has_valid_ssl", 0):
+                url_penalty += 0.08
+                confidence_signals.append("⚡ No valid SSL certificate — data transmitted unencrypted")
+
+            # Signal 4: IP address in URL
+            if features_dict.get("has_ip", 0):
+                url_penalty += 0.12
+                confidence_signals.append("⚡ URL contains raw IP address — server identity hidden")
+
+            # Signal 5: Brand in subdomain (phishing pattern)
+            if features_dict.get("brand_in_subdomain", 0):
+                url_penalty += 0.10
+                confidence_signals.append("⚡ Known brand name in subdomain — impersonation tactic")
+
+            # Signal 6: Suspicious TLD
+            if features_dict.get("is_suspicious_tld", 0):
+                url_penalty += 0.05
+                confidence_signals.append("⚡ Suspicious top-level domain detected")
+
+            # Signal 7: High URL entropy (obfuscation)
+            if features_dict.get("url_entropy", 0) > 4.5:
+                url_penalty += 0.05
+                confidence_signals.append("⚡ High URL entropy — possible obfuscation")
+
+            # Trust signals (reduce score for verified legitimate domains)
             is_perfect_brand = features_dict.get("min_brand_distance", 0) == 1.0
             is_not_typo = features_dict.get("is_typosquatting", 1) == 0.0
             has_ssl = features_dict.get("has_valid_ssl", 0) == 1.0
             is_old = features_dict.get("is_new_domain", 1) == 0.0
+            has_https = features_dict.get("has_https", 0) == 1.0
 
-            trust_signal = is_perfect_brand and is_not_typo and has_ssl and is_old
+            if is_perfect_brand and is_not_typo:
+                url_trust += 0.10
+                confidence_signals.append("✅ Domain matches known brand exactly")
+            if has_ssl and has_https:
+                url_trust += 0.08
+                confidence_signals.append("✅ Valid SSL certificate with HTTPS")
+            if is_old:
+                url_trust += 0.05
+                confidence_signals.append("✅ Established domain with history")
 
-            if trust_signal and risk_score > 0.15:
-                # Cautiously trust verified official domains
-                risk_score = 0.12  # Below standard threshold
-                parts = [f"Verified official domain. Risk score adjusted to {risk_score:.2%}"]
-            else:
-                parts = [f"Risk score: {risk_score:.2%}"]
+            # ── Weighted ensemble: neural 70% + heuristic 30% ──
+            heuristic_score = min(1.0, max(0.0, 0.3 + url_penalty - url_trust))
+            risk_score = 0.70 * neural_score + 0.30 * heuristic_score
 
-            # ── Explanation ──────────────────────────────────
+            # Override: verified official domain with low neural score
+            full_trust = is_perfect_brand and is_not_typo and has_ssl and is_old
+            if full_trust and neural_score < 0.3:
+                risk_score = min(risk_score, 0.12)
+                confidence_signals = ["✅ Verified official domain — all trust signals confirmed"]
+
+            risk_score = round(min(0.99, max(0.01, risk_score)), 4)
+
+            # ── Build explanation ────────────────────────────
+            parts = [f"Risk score: {risk_score:.2%}"]
+
             if features_dict.get("is_typosquatting", 0):
                 parts.append("Possible typosquatting detected")
             if features_dict.get("is_new_domain", 0):
@@ -173,8 +238,11 @@ class AdvancedPhishingDetector(nn.Module):
             if features_dict.get("brand_in_subdomain", 0):
                 parts.append("Brand name in subdomain")
 
+            if full_trust and risk_score <= 0.12:
+                parts = [f"Verified official domain. Risk score adjusted to {risk_score:.2%}"]
+
             return {
-                "risk_score": round(risk_score, 4),
+                "risk_score": risk_score,
                 "is_scam": risk_score > 0.5,
                 "explanation": ". ".join(parts) + ".",
             }
@@ -184,11 +252,11 @@ class AdvancedPhishingDetector(nn.Module):
     # ─────────────────────────────────────────────────────────
 
     def freeze_text_encoder(self):
-        """Freeze DeBERTa parameters (useful for first N epochs)."""
+        """Freeze DistilBERT parameters (useful for first N epochs)."""
         for param in self.text_encoder.parameters():
             param.requires_grad = False
 
     def unfreeze_text_encoder(self):
-        """Unfreeze DeBERTa parameters for fine-tuning."""
+        """Unfreeze DistilBERT parameters for fine-tuning."""
         for param in self.text_encoder.parameters():
             param.requires_grad = True

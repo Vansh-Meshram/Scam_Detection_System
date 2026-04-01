@@ -1,9 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { ScanHistoryItem, PredictResponse } from '@/types/api';
+import type { PredictResponse } from '@/types/api';
+
+export interface ScanHistoryItem {
+  id: string;
+  text: string;
+  url: string;
+  riskScore: number;
+  isScam: boolean;
+  explanation: string;
+  timestamp: string;
+}
 
 interface AppState {
-  // Theme
+  // Theme (always dark for cyberpunk)
   isDarkMode: boolean;
   toggleDarkMode: () => void;
   setDarkMode: (value: boolean) => void;
@@ -18,7 +28,7 @@ interface AppState {
 
   // History
   scanHistory: ScanHistoryItem[];
-  addToHistory: (item: Omit<ScanHistoryItem, 'id' | 'timestamp'>) => void;
+  addScanResult: (item: ScanHistoryItem) => void;
   clearHistory: () => void;
 
   // Feedback
@@ -29,8 +39,8 @@ interface AppState {
 export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
-      // Theme
-      isDarkMode: false,
+      // Theme — always dark for cyberpunk
+      isDarkMode: true,
       toggleDarkMode: () =>
         set((state) => {
           const newMode = !state.isDarkMode;
@@ -56,16 +66,9 @@ export const useAppStore = create<AppState>()(
 
       // History
       scanHistory: [],
-      addToHistory: (item) =>
+      addScanResult: (item) =>
         set((state) => ({
-          scanHistory: [
-            {
-              ...item,
-              id: Date.now().toString(36) + Math.random().toString(36).substr(2),
-              timestamp: new Date().toISOString(),
-            },
-            ...state.scanHistory,
-          ].slice(0, 100),
+          scanHistory: [item, ...state.scanHistory].slice(0, 100),
         })),
       clearHistory: () => set({ scanHistory: [] }),
 

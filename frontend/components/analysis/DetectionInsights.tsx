@@ -22,26 +22,26 @@ function generateFindings(explanation: string, isScam: boolean, riskScore: numbe
 
   if (riskScore > 0.5) {
     findings.push({
-      title: 'Phishing Indicators',
-      icon: '🎣',
+      title: 'PHISHING INDICATORS',
+      icon: '⚡',
       severity: 'high',
       details: [
         'Urgency language detected: "Act now!", "Limited time!", "Verify immediately"',
         'Impersonation patterns: pretending to be a trusted entity',
         'Requests for personal or financial information',
-        `Confidence: ${Math.round(riskScore * 100)}% match with known scam patterns`,
+        `Neural confidence: ${Math.round(riskScore * 100)}% match with known scam patterns`,
       ],
     });
   }
 
   if (riskScore > 0.3) {
     findings.push({
-      title: 'URL Anomalies',
-      icon: '🔗',
+      title: 'URL ANOMALIES',
+      icon: '⟐',
       severity: riskScore > 0.6 ? 'high' : 'medium',
       details: [
-        explanation.includes('IP address') ? '⚠ URL contains an IP address (suspicious)' : 'URL structure analysis complete',
-        'Domain reputation check performed',
+        explanation.includes('IP address') ? '▶ URL contains raw IP address (hostile indicator)' : 'URL structure analysis complete',
+        'Domain reputation scan performed',
         'Redirect chain analysis complete',
         'SSL certificate verification checked',
       ],
@@ -49,11 +49,11 @@ function generateFindings(explanation: string, isScam: boolean, riskScore: numbe
   }
 
   findings.push({
-    title: 'Sender Analysis',
-    icon: '📧',
+    title: 'SENDER ANALYSIS',
+    icon: '◉',
     severity: isScam ? 'high' : 'low',
     details: [
-      isScam ? '🚩 Sender domain flagged as potentially suspicious' : '✅ Sender domain appears legitimate',
+      isScam ? '▶ Sender domain flagged as potentially hostile' : '✓ Sender domain appears legitimate',
       'SPF/DKIM/DMARC verification performed',
       'Domain age and reputation checked',
       'Historical complaint records searched',
@@ -61,12 +61,12 @@ function generateFindings(explanation: string, isScam: boolean, riskScore: numbe
   });
 
   findings.push({
-    title: 'Content Analysis',
-    icon: '📝',
+    title: 'CONTENT ANALYSIS',
+    icon: '◈',
     severity: riskScore > 0.5 ? 'medium' : 'low',
     details: [
       `Overall risk score: ${Math.round(riskScore * 100)}%`,
-      `Classification: ${isScam ? 'Potential Scam' : 'Appears Safe'}`,
+      `Classification: ${isScam ? 'THREAT DETECTED' : 'APPEARS SAFE'}`,
       `AI explanation: ${explanation}`,
       'Grammar and tone analysis complete',
     ],
@@ -76,9 +76,9 @@ function generateFindings(explanation: string, isScam: boolean, riskScore: numbe
 }
 
 const severityColors = {
-  high: { border: '#EF4444', bg: 'rgba(239,68,68,0.08)', badge: '#EF4444' },
-  medium: { border: '#F59E0B', bg: 'rgba(245,158,11,0.08)', badge: '#F59E0B' },
-  low: { border: '#10B981', bg: 'rgba(16,185,129,0.08)', badge: '#10B981' },
+  high: { border: '#ff073a', bg: 'rgba(255,7,58,0.05)', badge: '#ff073a' },
+  medium: { border: '#ffe600', bg: 'rgba(255,230,0,0.05)', badge: '#ffe600' },
+  low: { border: '#39ff14', bg: 'rgba(57,255,20,0.05)', badge: '#39ff14' },
 };
 
 export default function DetectionInsights({ explanation, isScam, riskScore }: DetectionInsightsProps) {
@@ -88,16 +88,20 @@ export default function DetectionInsights({ explanation, isScam, riskScore }: De
   return (
     <Card hover={false}>
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-xl font-bold flex items-center gap-2">
-          🔎 Detection Insights
+        <h3 className="text-base font-bold flex items-center gap-2 tracking-wider uppercase"
+          style={{ fontFamily: 'var(--font-heading)', color: '#00f0ff' }}
+        >
+          ⟐ DETECTION INSIGHTS
         </h3>
-        <span className="text-xs font-medium px-3 py-1 rounded-full"
+        <span className="text-[10px] font-bold px-3 py-1 rounded-full tracking-wider"
           style={{
-            background: isScam ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-            color: isScam ? '#EF4444' : '#10B981',
+            background: isScam ? 'rgba(255,7,58,0.1)' : 'rgba(57,255,20,0.1)',
+            color: isScam ? '#ff073a' : '#39ff14',
+            border: `1px solid ${isScam ? 'rgba(255,7,58,0.2)' : 'rgba(57,255,20,0.2)'}`,
+            fontFamily: 'var(--font-heading)',
           }}
         >
-          {findings.length} findings
+          {findings.length} FINDINGS
         </span>
       </div>
 
@@ -111,23 +115,30 @@ export default function DetectionInsights({ explanation, isScam, riskScore }: De
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="rounded-lg overflow-hidden border-l-4 transition-all"
+              className="rounded-xl overflow-hidden transition-all"
               style={{
-                borderLeftColor: colors.border,
+                borderLeft: `3px solid ${colors.border}`,
                 background: isOpen ? colors.bg : 'transparent',
+                boxShadow: isOpen ? `0 0 15px ${colors.border}10` : 'none',
               }}
             >
               <button
                 onClick={() => setExpandedIndex(isOpen ? null : index)}
-                className="w-full px-4 py-3 flex items-center justify-between hover:bg-black/[0.03] dark:hover:bg-white/[0.03] transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between transition-colors"
+                style={{ color: 'var(--foreground)' }}
               >
-                <span className="flex items-center gap-2 font-semibold text-sm">
-                  <span className="text-lg">{finding.icon}</span>
-                  {finding.title}
-                  <span className="text-xs font-medium px-2 py-0.5 rounded-full text-white"
-                    style={{ background: colors.badge }}
+                <span className="flex items-center gap-2 font-semibold text-xs tracking-wider">
+                  <span className="text-base">{finding.icon}</span>
+                  <span style={{ fontFamily: 'var(--font-heading)' }}>{finding.title}</span>
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full tracking-[0.15em]"
+                    style={{
+                      background: `${colors.badge}15`,
+                      color: colors.badge,
+                      border: `1px solid ${colors.badge}30`,
+                      fontFamily: 'var(--font-heading)',
+                    }}
                   >
-                    {finding.severity}
+                    {finding.severity.toUpperCase()}
                   </span>
                 </span>
                 <motion.span
@@ -152,8 +163,8 @@ export default function DetectionInsights({ explanation, isScam, riskScore }: De
                     <div className="px-4 pb-4 pt-1 space-y-2">
                       {finding.details.map((detail, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--foreground)' }}>
-                          <span className="mt-0.5" style={{ color: 'var(--muted-foreground)' }}>•</span>
-                          <span className="leading-relaxed">{detail}</span>
+                          <span className="mt-0.5 text-xs" style={{ color: colors.border }}>▸</span>
+                          <span className="leading-relaxed text-xs">{detail}</span>
                         </div>
                       ))}
                     </div>

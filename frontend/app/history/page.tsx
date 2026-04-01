@@ -1,161 +1,155 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
-import Sidebar from '@/components/layout/Sidebar';
 import Card from '@/components/common/Card';
-import Button from '@/components/common/Button';
+import Sidebar from '@/components/layout/Sidebar';
+import Footer from '@/components/layout/Footer';
 
 export default function HistoryPage() {
   const { scanHistory, clearHistory } = useAppStore();
   const [filter, setFilter] = useState<'all' | 'scam' | 'safe'>('all');
-  const [search, setSearch] = useState('');
 
-  const filtered = scanHistory.filter((item) => {
-    const matchesFilter =
-      filter === 'all' ||
-      (filter === 'scam' && item.is_scam) ||
-      (filter === 'safe' && !item.is_scam);
-    const matchesSearch =
-      !search ||
-      item.text.toLowerCase().includes(search.toLowerCase()) ||
-      item.url.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+  const filteredHistory = scanHistory.filter((item) => {
+    if (filter === 'scam') return item.isScam;
+    if (filter === 'safe') return !item.isScam;
+    return true;
   });
 
-  const formatTime = (ts: string) => {
-    const d = new Date(ts);
-    const now = Date.now();
-    const diffMs = now - d.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    return `${diffDays}d ago`;
-  };
+  const filters = [
+    { key: 'all' as const, label: 'ALL SCANS', count: scanHistory.length },
+    { key: 'scam' as const, label: 'THREATS', count: scanHistory.filter((h) => h.isScam).length },
+    { key: 'safe' as const, label: 'CLEAR', count: scanHistory.filter((h) => !h.isScam).length },
+  ];
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--background)' }}>
+    <div className="flex">
       <Sidebar />
-
-      <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex-1">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold" style={{ color: 'var(--foreground)' }}>
-                Scan History
+              <h1 className="text-2xl sm:text-3xl font-black tracking-wider mb-2"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                <span className="neon-text-cyan">SCAN</span>{' '}
+                <span style={{ color: 'var(--foreground)' }}>LOGS</span>
               </h1>
-              <p className="mt-1 text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                {scanHistory.length} total scans
+              <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+                {scanHistory.length} total scans recorded
               </p>
             </div>
             {scanHistory.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearHistory}>
-                🗑️ Clear All
-              </Button>
+              <button
+                onClick={clearHistory}
+                className="text-xs font-bold tracking-wider px-4 py-2 rounded-xl transition-all"
+                style={{
+                  color: '#ff073a',
+                  border: '1px solid rgba(255, 7, 58, 0.2)',
+                  background: 'rgba(255, 7, 58, 0.05)',
+                  fontFamily: 'var(--font-heading)',
+                }}
+              >
+                ✕ PURGE LOGS
+              </button>
             )}
           </div>
-        </motion.div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2">🔍</span>
-            <input
-              type="text"
-              placeholder="Search scans..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-base pl-10"
-            />
-          </div>
-          <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--secondary)' }}>
-            {(['all', 'scam', 'safe'] as const).map((f) => (
+          {/* Filters */}
+          <div className="flex gap-2 mb-6">
+            {filters.map((f) => (
               <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
-                  filter === f ? 'bg-[#1E88E5] text-white shadow-md' : ''
-                }`}
-                style={filter !== f ? { color: 'var(--muted-foreground)' } : undefined}
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className="px-4 py-2 rounded-xl text-[10px] font-bold tracking-[0.15em] transition-all duration-300"
+                style={{
+                  background: filter === f.key ? 'rgba(0, 240, 255, 0.1)' : 'transparent',
+                  border: filter === f.key ? '1px solid rgba(0, 240, 255, 0.3)' : '1px solid rgba(0, 240, 255, 0.06)',
+                  color: filter === f.key ? '#00f0ff' : 'var(--muted-foreground)',
+                  fontFamily: 'var(--font-heading)',
+                }}
               >
-                {f === 'scam' ? '🚨 Scam' : f === 'safe' ? '✅ Safe' : '📋 All'}
+                {f.label} ({f.count})
               </button>
             ))}
           </div>
+
+          {/* Scan List */}
+          {filteredHistory.length === 0 ? (
+            <Card className="text-center py-16">
+              <div className="text-4xl mb-4">⟐</div>
+              <h3 className="text-sm font-bold mb-2 tracking-wider"
+                style={{ fontFamily: 'var(--font-heading)', color: 'var(--foreground)' }}
+              >
+                {scanHistory.length === 0 ? 'NO SCANS RECORDED' : 'NO MATCHING RESULTS'}
+              </h3>
+              <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                {scanHistory.length === 0
+                  ? 'Run your first neural scan to populate the logs'
+                  : 'Try changing the filter to see other results'}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredHistory.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="p-5 rounded-2xl transition-all duration-300"
+                  style={{
+                    background: 'rgba(10, 17, 40, 0.7)',
+                    border: `1px solid ${item.isScam ? 'rgba(255,7,58,0.15)' : 'rgba(57,255,20,0.15)'}`,
+                    backdropFilter: 'blur(12px)',
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span
+                          className="text-[10px] font-bold px-3 py-1 rounded-full tracking-[0.15em]"
+                          style={{
+                            background: item.isScam ? 'rgba(255,7,58,0.1)' : 'rgba(57,255,20,0.1)',
+                            color: item.isScam ? '#ff073a' : '#39ff14',
+                            border: `1px solid ${item.isScam ? 'rgba(255,7,58,0.2)' : 'rgba(57,255,20,0.2)'}`,
+                            fontFamily: 'var(--font-heading)',
+                          }}
+                        >
+                          {item.isScam ? 'THREAT' : 'CLEAR'}
+                        </span>
+                        <span className="font-bold text-sm tabular-nums"
+                          style={{
+                            color: item.isScam ? '#ff073a' : '#39ff14',
+                            fontFamily: 'var(--font-heading)',
+                            textShadow: `0 0 15px ${item.isScam ? 'rgba(255,7,58,0.3)' : 'rgba(57,255,20,0.3)'}`,
+                          }}
+                        >
+                          {Math.round(item.riskScore * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-sm truncate mb-1" style={{ color: 'var(--foreground)' }}>
+                        {item.url || item.text}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
+                        {item.explanation}
+                      </p>
+                    </div>
+                    <div className="text-xs whitespace-nowrap tabular-nums"
+                      style={{ color: 'var(--muted-foreground)', fontFamily: 'var(--font-heading)' }}
+                    >
+                      {new Date(item.timestamp).toLocaleDateString()}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* History Grid */}
-        {filtered.length === 0 ? (
-          <Card hover={false}>
-            <div className="text-center py-16">
-              <div className="text-5xl mb-4">📭</div>
-              <p className="text-lg font-semibold mb-2" style={{ color: 'var(--foreground)' }}>
-                {scanHistory.length === 0 ? 'No scans yet' : 'No matching results'}
-              </p>
-              <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-                {scanHistory.length === 0
-                  ? 'Analyze a message to see it appear here'
-                  : 'Try adjusting your search or filters'}
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <AnimatePresence>
-              {filtered.map((item, index) => {
-                const pct = Math.round(item.risk_score * 100);
-                const riskColor = item.is_scam ? '#EF4444' : item.risk_score > 0.3 ? '#F59E0B' : '#10B981';
-                const riskLabel = item.is_scam ? 'SCAM' : item.risk_score > 0.3 ? 'SUSPICIOUS' : 'SAFE';
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="card-base p-5 flex flex-col"
-                  >
-                    {/* Risk Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-bold px-3 py-1 rounded-full text-white" style={{ background: riskColor }}>
-                        {item.is_scam ? '🚨' : '✅'} {pct}% {riskLabel}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
-                        {formatTime(item.timestamp)}
-                      </span>
-                    </div>
-
-                    {/* Content Preview */}
-                    <p className="text-sm mb-2 line-clamp-2 flex-1" style={{ color: 'var(--foreground)' }}>
-                      {item.text || '(No text content)'}
-                    </p>
-
-                    {item.url && (
-                      <p className="text-xs truncate mt-1" style={{ color: 'var(--muted-foreground)' }}>
-                        🔗 {item.url}
-                      </p>
-                    )}
-
-                    {/* Score bar */}
-                    <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--secondary)' }}>
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, background: riskColor }}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        )}
+        <Footer />
       </div>
     </div>
   );

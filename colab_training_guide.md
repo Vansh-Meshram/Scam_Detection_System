@@ -1,40 +1,146 @@
-# Google Colab GPU Training Guide
-This guide explains how to train the ScamGuard AI model efficiently using Google Colab's free T4 GPU.
+# 🧠 Google Colab Training Guide — DistilBERT Scam Detection Model
 
-## Phase 1: Prepare Your Files Locally
-1. Stop any local `train.py` scripts running on your computer.
-2. In your File Explorer, navigate to your project folder: `scam_detection_system`.
-3. Select three items: your `data` folder, your `src` folder, and your `requirements.txt` file.
-4. Right-click them and select **Compress to ZIP file**. Name the zip file `project_for_colab.zip`.
+Train the **DistilBERT + URLNet Co-Attention** phishing detection model on Google Colab with GPU acceleration.
 
-## Phase 2: Setup Google Colab
-1. Go to [Google Colab](https://colab.research.google.com/) and sign in with your Google account.
-2. Click **New Notebook**.
-3. In the new notebook, go to the top menu and select **Runtime** > **Change runtime type**.
-4. Under the "Hardware accelerator" dropdown, select **T4 GPU** and click **Save**. 
+---
 
-## Phase 3: Upload and Train
-1. On the far-left sidebar of Colab, click the **Folder icon** to open the files panel. 
-2. Drag and drop your `project_for_colab.zip` file into that files panel to upload it.
-3. **IMPORTANT**: Look at the orange progress circle at the bottom. **Wait for the upload to 100% finish before running anything!** (This takes a few minutes because the dataset is quite large).
-4. Once the circle disappears, create a code cell, paste this command to unzip your files, and hit "Play":
-   ```bash
-   !unzip -q project_for_colab.zip
-   ```
-5. Create a new code cell, paste this command to install the dependencies, and run it:
-   ```bash
-   !pip install -r requirements.txt
-   ```
-6. Create one last code cell, paste this training command, and run it. Notice we use a higher batch-size of 16 to take advantage of the 16GB GPU memory!
-   ```bash
-   !PYTHONPATH="." python src/training/train.py --epochs 2 --batch-size 16
-   ```
+## Prerequisites
 
-## Phase 4: Retrieve the Brain!
-1. Once the training completes, you will see it output lines like `"Total params: 195M | Trainable: 11M"` and `"Best model saved"`. 
-2. In the left-side files panel, open the newly generated **`models`** folder.
-3. Hover over **`phishing_detector.pt`**, click the three dots `⋮` on the right side of the filename, and click **Download**. 
-4. Do the exact same for **`url_vocab.json`**.
-5. Move both of these downloaded files into your local project's `models/` folder.
+- Google account with Google Drive
+- Dataset CSV file with columns: `text`, `url`, `label` (0=safe, 1=scam)
+- Recommended: Colab Pro for faster GPU access
 
-Next time you start your local `uvicorn` API, it will load these custom-trained GPU weights!
+---
+
+## Step 1: Setup Runtime
+
+1. Open [Google Colab](https://colab.research.google.com)
+2. Go to **Runtime → Change runtime type → GPU (T4)**
+
+---
+
+## Step 2: Mount Google Drive
+
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+```
+
+---
+
+## Step 3: Upload Project Files
+
+Upload your entire `backend/` folder to Google Drive, then:
+
+```python
+import os
+os.chdir('/content/drive/MyDrive/scam_detection_system/backend')
+!ls src/models/  # verify files exist
+```
+
+---
+
+## Step 4: Install Dependencies
+
+```python
+!pip install torch transformers scikit-learn pandas tldextract python-Levenshtein cachetools
+```
+
+---
+
+## Step 5: Prepare Dataset
+
+Upload your dataset CSV to `backend/data/combined_dataset.csv`. Expected format:
+
+| text | url | label |
+|------|-----|-------|
+| "Verify your account now!" | "http://paypa1-verify.tk" | 1 |
+| "Your order has shipped" | "https://amazon.com/orders" | 0 |
+
+```python
+import pandas as pd
+df = pd.read_csv('data/combined_dataset.csv')
+print(f"Dataset: {len(df)} samples")
+print(f"Label distribution:\n{df['label'].value_counts()}")
+```
+
+---
+
+## Step 6: Train the Model
+
+```python
+!python src/training/train.py \
+    --data-path data/combined_dataset.csv \
+    --epochs 10 \
+    --batch-size 16 \
+    --lr 2e-5 \
+    --freeze-epochs 2 \
+    --adversarial \
+    --patience 3 \
+    --save-dir models/
+```
+
+**What happens during training:**
+- **Epochs 1-2**: DistilBERT is frozen; only URLNet, Fusion, and Classifier train
+- **Epoch 3+**: DistilBERT unfreezes at 10% LR for fine-tuning
+- **Early stopping**: Stops if validation loss doesn't improve for 3 epochs
+- **Best model** is saved automatically to `models/phishing_detector.pt`
+
+---
+
+## Step 7: Evaluate Results
+
+```python
+!python tests/test_upgrade.py
+```
+
+Expected output: all 6 tests pass (URL features, URLEncoder, Fusion, Full model, Adversarial, Preprocessing).
+
+---
+
+## Step 8: Download Trained Model
+
+```python
+from google.colab import files
+files.download('models/phishing_detector.pt')
+files.download('models/url_vocab.json')
+```
+
+Place both files in your local `backend/models/` directory.
+
+---
+
+## Step 9: Verify Locally
+
+```bash
+cd backend
+python -m uvicorn src.api.main:app --reload
+# API should start on http://localhost:8000
+```
+
+Test with:
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text": "", "url": "http://paypa1-verify.tk"}'
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| CUDA out of memory | Reduce `--batch-size` to 8 |
+| Import errors | Ensure `backend/` is the CWD and run `pip install` again |
+| Low accuracy | Increase `--epochs` to 15, ensure balanced dataset |
+| Model won't load | Verify `phishing_detector.pt` was saved to `models/` |
+
+---
+
+## Training Tips
+
+1. **More data = better**: Aim for 10K+ samples with balanced labels
+2. **Data augmentation**: Duplicate scam samples with paraphrasing for balance
+3. **Learning rate**: Start with `2e-5`, try `1e-5` for fine-tuning
+4. **Freeze epochs**: Use 2-3 freeze epochs to stabilize URLNet first

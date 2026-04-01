@@ -33,7 +33,7 @@ KNOWN_BRANDS = [
     "paypal", "google", "apple", "microsoft", "amazon",
     "netflix", "facebook", "instagram", "twitter", "linkedin",
     "chase", "wellsfargo", "bankofamerica", "citibank",
-    "dropbox", "adobe",
+    "dropbox", "adobe", "flipkart",
 ]
 
 SUSPICIOUS_TLDS = {
@@ -234,26 +234,65 @@ class EnhancedURLFeaturizer:
             return 0.0
 
     @staticmethod
+    def _visual_normalize(text: str) -> str:
+        """Normalize visually similar characters (homoglyphes/substitutions)."""
+        subs = {
+            '0': 'o', '1': 'l', '2': 'z', '5': 's', '8': 'b',
+            'I': 'l', '!': 'i', '@': 'a', '$': 's',
+        }
+        text = text.lower()
+        for char, sub in subs.items():
+            text = text.replace(char, sub)
+        return text
+
+    @staticmethod
+    def _levenshtein(s1: str, s2: str) -> int:
+        """Native Levenshtein distance implementation."""
+        if len(s1) < len(s2):
+            return EnhancedURLFeaturizer._levenshtein(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
+    @staticmethod
     def _brand_similarity(domain: str):
         """
         Return (raw_min_distance, normalised_similarity) against KNOWN_BRANDS.
-
-        normalised_similarity = 1 - min(distance / max_len, 1.0)
-          where max_len = max(len(domain), len(brand))
-
-        Falls back to (999, 0.0) when Levenshtein is unavailable.
+        Includes visual character normalization (0->o, 1->l).
         """
-        if not domain or not HAS_LEVENSHTEIN:
+        if not domain:
             return 999, 0.0
 
         domain_lower = domain.lower()
+        domain_norm = EnhancedURLFeaturizer._visual_normalize(domain_lower)
+        
         min_dist = float("inf")
         best_norm = 0.0
 
         for brand in KNOWN_BRANDS:
-            dist = levenshtein_distance(domain_lower, brand)
+            # Check original
+            dist_orig = levenshtein_distance(domain_lower, brand) if HAS_LEVENSHTEIN else \
+                       EnhancedURLFeaturizer._levenshtein(domain_lower, brand)
+            
+            # Check normalized
+            brand_norm = EnhancedURLFeaturizer._visual_normalize(brand)
+            dist_norm = levenshtein_distance(domain_norm, brand_norm) if HAS_LEVENSHTEIN else \
+                       EnhancedURLFeaturizer._levenshtein(domain_norm, brand_norm)
+            
+            dist = min(dist_orig, dist_norm)
+            
             max_len = max(len(domain_lower), len(brand))
             norm = 1.0 - min(dist / max_len, 1.0) if max_len else 0.0
+            
             if dist < min_dist:
                 min_dist = dist
                 best_norm = norm

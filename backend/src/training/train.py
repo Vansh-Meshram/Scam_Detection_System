@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.optim import AdamW
-from transformers import DebertaV2Tokenizer
+from transformers import AutoTokenizer
 
 from src.data.loader import ScamDataset, load_and_merge_data
 from src.data.preprocessing import set_url_tokenizer
@@ -71,9 +71,9 @@ def train():
         json.dump(url_tokenizer.word_to_idx, f)
     logger.info(f"URL vocab saved → {vocab_path}")
 
-    # Text tokenizer
-    text_tokenizer = DebertaV2Tokenizer.from_pretrained(
-        "microsoft/deberta-v3-base"
+    # Text tokenizer — DistilBERT
+    text_tokenizer = AutoTokenizer.from_pretrained(
+        "distilbert-base-uncased"
     )
 
     # Dataset & split

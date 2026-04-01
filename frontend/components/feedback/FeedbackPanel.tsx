@@ -38,30 +38,32 @@ export default function FeedbackPanel({ text, url, riskScore, isScam }: Feedback
         particleCount: 80,
         spread: 60,
         origin: { y: 0.7 },
-        colors: ['#1E88E5', '#10B981', '#F59E0B', '#764ba2'],
+        colors: ['#00f0ff', '#39ff14', '#ff00e5', '#b14eff'],
       });
 
-      toast.success('Thank you for your feedback! 🎉');
+      toast.success('Neural feedback integrated!');
     } catch {
-      toast.error('Failed to submit feedback. The AI backend may not be running.');
+      toast.error('Failed to submit feedback. Backend may not be running.');
     } finally {
       setSubmitting(false);
     }
   };
 
   const getBadge = () => {
-    if (feedbackCount >= 100) return { label: '🏆 Expert Contributor', color: '#F59E0B' };
-    if (feedbackCount >= 50) return { label: '⭐ Active Contributor', color: '#1E88E5' };
-    if (feedbackCount >= 10) return { label: '🌱 Rising Contributor', color: '#10B981' };
-    return { label: '👋 New Contributor', color: '#94A3B8' };
+    if (feedbackCount >= 100) return { label: '◈ ELITE OPERATOR', color: '#ffe600' };
+    if (feedbackCount >= 50) return { label: '⟁ CYBER ANALYST', color: '#00f0ff' };
+    if (feedbackCount >= 10) return { label: '⟐ FIELD AGENT', color: '#39ff14' };
+    return { label: '◉ RECRUIT', color: '#6b7fa8' };
   };
 
   const badge = getBadge();
 
   return (
-    <Card hover={false} glow="blue">
-      <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-        💡 Help Improve Our AI
+    <Card hover={false} glow="cyan">
+      <h3 className="text-base font-bold mb-4 flex items-center gap-2 tracking-wider uppercase"
+        style={{ fontFamily: 'var(--font-heading)', color: '#00f0ff' }}
+      >
+        ⟁ IMPROVE NEURAL NET
       </h3>
 
       {submitted ? (
@@ -70,18 +72,18 @@ export default function FeedbackPanel({ text, url, riskScore, isScam }: Feedback
           animate={{ opacity: 1, scale: 1 }}
           className="text-center py-6"
         >
-          <div className="text-5xl mb-3">🎉</div>
-          <p className="font-semibold text-lg" style={{ color: 'var(--foreground)' }}>
-            Feedback Submitted!
+          <div className="text-4xl mb-3">⟁</div>
+          <p className="font-bold text-sm tracking-wider" style={{ color: '#39ff14', fontFamily: 'var(--font-heading)' }}>
+            FEEDBACK INTEGRATED
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            Your contribution helps make ScamGuard smarter
+          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
+            Neural network is adapting to your input
           </p>
         </motion.div>
       ) : (
         <>
-          <p className="text-sm mb-4" style={{ color: 'var(--muted-foreground)' }}>
-            Was this prediction accurate?
+          <p className="text-xs mb-4" style={{ color: 'var(--muted-foreground)' }}>
+            Was this verdict accurate?
           </p>
           <div className="flex gap-3 mb-4">
             <Button
@@ -91,7 +93,7 @@ export default function FeedbackPanel({ text, url, riskScore, isScam }: Feedback
               onClick={() => handleFeedback(true)}
               isLoading={submitting}
             >
-              👍 Yes, correct
+              ✓ CORRECT
             </Button>
             <Button
               variant="secondary"
@@ -100,39 +102,42 @@ export default function FeedbackPanel({ text, url, riskScore, isScam }: Feedback
               onClick={() => handleFeedback(false)}
               isLoading={submitting}
             >
-              👎 No, wrong
+              ✕ WRONG
             </Button>
           </div>
         </>
       )}
 
       {/* Gamification */}
-      <div className="pt-4 mt-4 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
+      <div className="pt-4 mt-4 border-t space-y-3" style={{ borderColor: 'rgba(0, 240, 255, 0.08)' }}>
         <div className="flex items-center justify-between">
-          <span className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
-            Your contributions
+          <span className="text-xs tracking-wider uppercase" style={{ color: 'var(--muted-foreground)', fontFamily: 'var(--font-heading)' }}>
+            Contributions
           </span>
-          <span className="font-bold text-lg tabular-nums" style={{ color: '#1E88E5' }}>
+          <span className="font-bold text-lg tabular-nums" style={{ color: '#00f0ff', fontFamily: 'var(--font-heading)' }}>
             {feedbackCount}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: badge.color }}>
+          <span className="text-xs font-bold tracking-wider" style={{ color: badge.color, fontFamily: 'var(--font-heading)' }}>
             {badge.label}
           </span>
         </div>
 
-        {/* Progress to next level */}
         <div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--secondary)' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0, 240, 255, 0.06)' }}>
             <motion.div
               className="h-full rounded-full"
-              style={{ background: badge.color, width: `${Math.min(100, (feedbackCount % 10) * 10)}%` }}
+              style={{
+                background: badge.color,
+                width: `${Math.min(100, (feedbackCount % 10) * 10)}%`,
+                boxShadow: `0 0 8px ${badge.color}40`,
+              }}
             />
           </div>
-          <p className="text-xs mt-1" style={{ color: 'var(--muted-foreground)' }}>
-            {10 - (feedbackCount % 10)} more to next milestone
+          <p className="text-[10px] mt-1 tracking-wider" style={{ color: 'var(--muted-foreground)', fontFamily: 'var(--font-heading)' }}>
+            {10 - (feedbackCount % 10)} MORE TO NEXT RANK
           </p>
         </div>
       </div>

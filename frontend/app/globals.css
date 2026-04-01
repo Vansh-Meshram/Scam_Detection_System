@@ -1,34 +1,54 @@
 @import "tailwindcss";
 
 /* ============================
-   CSS CUSTOM PROPERTIES
+   CYBERPUNK NEON DESIGN SYSTEM
    ============================ */
+
+
 :root {
-  --background: #F8FAFC;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #1E88E5;
+  /* Neon palette */
+  --neon-cyan: #00f0ff;
+  --neon-magenta: #ff00e5;
+  --neon-green: #39ff14;
+  --neon-red: #ff073a;
+  --neon-yellow: #ffe600;
+  --neon-purple: #b14eff;
+  --neon-orange: #ff6b2b;
+
+  /* Backgrounds */
+  --background: #060b18;
+  --background-secondary: #0a1128;
+  --foreground: #e0e8ff;
+  --card: rgba(10, 17, 40, 0.85);
+  --card-foreground: #e0e8ff;
+  --secondary: rgba(15, 25, 55, 0.9);
+  --secondary-foreground: #e0e8ff;
+  --muted: rgba(20, 30, 60, 0.8);
+  --muted-foreground: #6b7fa8;
+  --border: rgba(0, 240, 255, 0.12);
+  --input: rgba(0, 240, 255, 0.08);
+  --ring: var(--neon-cyan);
+
+  /* Font families */
+  --font-heading: 'Orbitron', 'Rajdhani', sans-serif;
+  --font-body: 'Inter', 'Rajdhani', sans-serif;
+  --font-mono: 'Rajdhani', monospace;
 }
 
+/* Dark mode is always-on for cyberpunk */
 .dark {
-  --background: #0F172A;
-  --foreground: #F8FAFC;
-  --card: #1E293B;
-  --card-foreground: #F8FAFC;
-  --secondary: #334155;
-  --secondary-foreground: #F8FAFC;
-  --muted: #334155;
-  --muted-foreground: #94A3B8;
-  --border: #334155;
-  --input: #334155;
-  --ring: #1E88E5;
+  --background: #060b18;
+  --background-secondary: #0a1128;
+  --foreground: #e0e8ff;
+  --card: rgba(10, 17, 40, 0.85);
+  --card-foreground: #e0e8ff;
+  --secondary: rgba(15, 25, 55, 0.9);
+  --secondary-foreground: #e0e8ff;
+  --muted: rgba(20, 30, 60, 0.8);
+  --muted-foreground: #6b7fa8;
+  --border: rgba(0, 240, 255, 0.12);
+  --input: rgba(0, 240, 255, 0.08);
+  --ring: var(--neon-cyan);
 }
 
 /* ============================
@@ -38,40 +58,143 @@
   border-color: var(--border);
 }
 
+html {
+  color-scheme: dark;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ============================
+   ANIMATED GRID BACKGROUND
+   ============================ */
+.cyber-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: grid-scroll 20s linear infinite;
+}
+
+@keyframes grid-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+/* Scanline overlay */
+.scanline {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 240, 255, 0.008) 2px,
+    rgba(0, 240, 255, 0.008) 4px
+  );
 }
 
 /* ============================
    GLASSMORPHISM
    ============================ */
 .glass {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(10, 17, 40, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 240, 255, 0.1);
 }
 
-.dark .glass {
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid rgba(71, 85, 105, 0.3);
+.glass-card {
+  background: rgba(10, 17, 40, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.03),
+    inset 0 1px 0 rgba(0, 240, 255, 0.05);
+  transition: all 0.3s ease;
 }
 
-/* Light mode glass */
-:root .glass {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+.glass-card:hover {
+  border-color: rgba(0, 240, 255, 0.2);
+  box-shadow:
+    0 0 30px rgba(0, 240, 255, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(0, 240, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ============================
+   NEON GLOW UTILITIES
+   ============================ */
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 40px rgba(0, 240, 255, 0.2);
+}
+
+.neon-text-magenta {
+  color: var(--neon-magenta);
+  text-shadow: 0 0 10px rgba(255, 0, 229, 0.5), 0 0 40px rgba(255, 0, 229, 0.2);
+}
+
+.neon-text-green {
+  color: var(--neon-green);
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5), 0 0 40px rgba(57, 255, 20, 0.2);
+}
+
+.neon-text-red {
+  color: var(--neon-red);
+  text-shadow: 0 0 10px rgba(255, 7, 58, 0.5), 0 0 40px rgba(255, 7, 58, 0.2);
+}
+
+.text-gradient-cyber {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================
+   NEON BORDER GLOW
+   ============================ */
+.neon-border-cyan {
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.1), inset 0 0 15px rgba(0, 240, 255, 0.03);
+}
+
+.neon-border-magenta {
+  border-color: rgba(255, 0, 229, 0.3);
+  box-shadow: 0 0 15px rgba(255, 0, 229, 0.1), inset 0 0 15px rgba(255, 0, 229, 0.03);
+}
+
+.neon-border-green {
+  border-color: rgba(57, 255, 20, 0.3);
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.1), inset 0 0 15px rgba(57, 255, 20, 0.03);
+}
+
+.neon-border-red {
+  border-color: rgba(255, 7, 58, 0.3);
+  box-shadow: 0 0 15px rgba(255, 7, 58, 0.1), inset 0 0 15px rgba(255, 7, 58, 0.03);
 }
 
 /* ============================
    ANIMATED GRADIENT
    ============================ */
 .gradient-bg {
-  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #4facfe);
+  background: linear-gradient(-45deg, #00f0ff, #b14eff, #ff00e5, #00f0ff);
   background-size: 400% 400%;
   animation: gradient-shift 15s ease infinite;
 }
@@ -82,7 +205,7 @@ body {
 }
 
 /* ============================
-   LOADING ANIMATIONS
+   LOADING / ANIMATIONS
    ============================ */
 @keyframes shimmer {
   0% { background-position: -1000px 0; }
@@ -92,10 +215,10 @@ body {
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.15) 20%,
-    rgba(255, 255, 255, 0.35) 60%,
-    rgba(255, 255, 255, 0)
+    rgba(0, 240, 255, 0) 0%,
+    rgba(0, 240, 255, 0.08) 20%,
+    rgba(0, 240, 255, 0.15) 60%,
+    rgba(0, 240, 255, 0)
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
@@ -111,29 +234,50 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); }
+@keyframes pulse-neon {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 7, 58, 0.3), 0 0 40px rgba(255, 7, 58, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(255, 7, 58, 0.5), 0 0 80px rgba(255, 7, 58, 0.2); }
+}
+
+@keyframes pulse-cyan {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), 0 0 40px rgba(0, 240, 255, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(0, 240, 255, 0.5), 0 0 80px rgba(0, 240, 255, 0.2); }
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 0 0 10px rgba(0,240,255,0.5), 0 0 40px rgba(0,240,255,0.2);
+  }
+  20%, 24%, 55% {
+    text-shadow: none;
+  }
+}
+
+@keyframes data-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
 }
 
 /* ============================
    SCROLLBAR
    ============================ */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--secondary);
+  background: rgba(6, 11, 24, 0.8);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(30, 136, 229, 0.4);
+  background: rgba(0, 240, 255, 0.2);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(30, 136, 229, 0.7);
+  background: rgba(0, 240, 255, 0.4);
 }
 
 /* ============================
@@ -141,62 +285,70 @@ body {
    ============================ */
 *:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--ring), 0 0 0 4px rgba(30, 136, 229, 0.2);
+  box-shadow: 0 0 0 2px var(--neon-cyan), 0 0 15px rgba(0, 240, 255, 0.2);
   border-radius: 4px;
 }
 
 /* ============================
-   UTILITY CLASSES
+   CARD BASE (legacy compat)
    ============================ */
-.text-gradient {
-  background: linear-gradient(135deg, #1E88E5, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
 .card-base {
-  background-color: var(--card);
+  background: rgba(10, 17, 40, 0.7);
+  backdrop-filter: blur(16px);
   color: var(--card-foreground);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  border: 1px solid rgba(0, 240, 255, 0.08);
+  border-radius: 16px;
+  box-shadow:
+    0 0 20px rgba(0, 240, 255, 0.03),
+    inset 0 1px 0 rgba(0, 240, 255, 0.05);
   transition: all 0.3s ease;
 }
 
 .card-base:hover {
-  box-shadow: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+  border-color: rgba(0, 240, 255, 0.2);
+  box-shadow:
+    0 0 30px rgba(0, 240, 255, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
 }
 
+/* ============================
+   INPUT BASE
+   ============================ */
 .input-base {
   width: 100%;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--input);
-  background-color: var(--background);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  background: rgba(6, 11, 24, 0.8);
   color: var(--foreground);
-  transition: all 0.2s ease;
+  font-family: var(--font-body);
+  transition: all 0.3s ease;
 }
 
 .input-base:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--ring);
-  border-color: transparent;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), 0 0 0 1px var(--neon-cyan);
+}
+
+.input-base::placeholder {
+  color: rgba(107, 127, 168, 0.6);
 }
 
 /* ============================
-   PARTICLES (CSS-only)
+   PARTICLES
    ============================ */
 .particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
   border-radius: 50%;
-  background: rgba(30, 136, 229, 0.3);
+  background: var(--neon-cyan);
   animation: float 6s ease-in-out infinite;
+  opacity: 0.3;
 }
 
+.particle:nth-child(2n) { background: var(--neon-magenta); }
+.particle:nth-child(3n) { background: var(--neon-purple); }
 .particle:nth-child(2) { animation-delay: -2s; animation-duration: 8s; }
 .particle:nth-child(3) { animation-delay: -4s; animation-duration: 10s; }
 .particle:nth-child(4) { animation-delay: -1s; animation-duration: 7s; }
@@ -205,10 +357,47 @@ body {
 /* ============================
    GAUGE GLOW EFFECTS
    ============================ */
-.glow-green { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5)); }
-.glow-yellow { filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.5)); }
-.glow-red { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5)); }
+.glow-green { filter: drop-shadow(0 0 8px rgba(57, 255, 20, 0.5)); }
+.glow-yellow { filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.5)); }
+.glow-red { filter: drop-shadow(0 0 8px rgba(255, 7, 58, 0.5)); }
+.glow-cyan { filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.5)); }
 
 .pulse-danger {
-  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulse-neon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.pulse-safe {
+  animation: pulse-cyan 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================
+   NEON LINE SEPARATOR
+   ============================ */
+.neon-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+  opacity: 0.4;
+}
+
+/* ============================
+   CYBER BUTTON GLOW
+   ============================ */
+.btn-cyber {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-cyber::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, var(--neon-cyan), var(--neon-magenta), var(--neon-cyan));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-cyber:hover::before {
+  opacity: 1;
 }

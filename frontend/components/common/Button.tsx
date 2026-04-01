@@ -11,15 +11,38 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-[#1E88E5] text-white hover:bg-[#1976D2] shadow-lg hover:shadow-xl focus:ring-[#1E88E5]',
-  secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:brightness-95 focus:ring-gray-400',
-  danger: 'bg-[#EF4444] text-white hover:bg-[#DC2626] shadow-lg hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] focus:ring-[#EF4444]',
-  ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--secondary)] focus:ring-gray-400',
+  primary: 'text-[#060b18] font-bold',
+  secondary: 'text-[var(--foreground)]',
+  danger: 'text-white font-bold',
+  ghost: 'text-[var(--foreground)]',
+};
+
+const bgStyles = {
+  primary: {
+    background: 'linear-gradient(135deg, #00f0ff, #00b8d4)',
+    border: '1px solid rgba(0, 240, 255, 0.5)',
+    boxShadow: '0 0 20px rgba(0, 240, 255, 0.2), inset 0 1px 0 rgba(255,255,255,0.2)',
+  },
+  secondary: {
+    background: 'rgba(0, 240, 255, 0.06)',
+    border: '1px solid rgba(0, 240, 255, 0.15)',
+    boxShadow: 'none',
+  },
+  danger: {
+    background: 'linear-gradient(135deg, #ff073a, #cc0029)',
+    border: '1px solid rgba(255, 7, 58, 0.5)',
+    boxShadow: '0 0 20px rgba(255, 7, 58, 0.2)',
+  },
+  ghost: {
+    background: 'transparent',
+    border: '1px solid transparent',
+    boxShadow: 'none',
+  },
 };
 
 const sizes = {
-  sm: 'px-4 py-2 text-sm rounded-md',
-  md: 'px-6 py-2.5 text-base rounded-lg',
+  sm: 'px-4 py-2 text-sm rounded-lg',
+  md: 'px-6 py-2.5 text-base rounded-xl',
   lg: 'px-8 py-3.5 text-lg rounded-xl',
 };
 
@@ -38,18 +61,22 @@ export default function Button({
       whileTap={!disabled && !isLoading ? { scale: 0.98 } : undefined}
       className={`
         inline-flex items-center justify-center gap-2 font-semibold
-        transition-all duration-200 cursor-pointer
-        focus:outline-none focus:ring-2 focus:ring-offset-2
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+        transition-all duration-300 cursor-pointer tracking-wider
+        focus:outline-none
+        disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none
         ${variants[variant]} ${sizes[size]} ${className}
       `}
+      style={{
+        ...bgStyles[variant],
+        fontFamily: 'var(--font-heading)',
+      }}
       disabled={disabled || isLoading}
       {...props}
     >
       {isLoading ? (
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          <span>Analyzing...</span>
+          <span>SCANNING...</span>
         </div>
       ) : (
         children

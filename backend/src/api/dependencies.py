@@ -7,7 +7,7 @@ import json
 import logging
 
 import torch
-from transformers import DebertaV2Tokenizer
+from transformers import AutoTokenizer
 
 from src.models.phishing_detector import AdvancedPhishingDetector
 from src.models.url_encoder import URLTokenizer
@@ -36,7 +36,7 @@ def load_model_artifacts(
     logger.info(f"Device: {_device}")
 
     # ── Text tokenizer ───────────────────────────────────────
-    _tokenizer = DebertaV2Tokenizer.from_pretrained("microsoft/deberta-v3-base")
+    _tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
 
     # ── URL tokenizer with saved vocabulary ──────────────────
     _url_tokenizer = URLTokenizer(max_url_length=200, max_words=20)

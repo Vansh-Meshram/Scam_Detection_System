@@ -1,13 +1,12 @@
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-export const APP_CONFIG = {
-  name: 'ScamGuard AI',
-  version: '2.0.0',
-  description: 'Enterprise-grade scam detection powered by AI',
-  features: {
-    accuracy: '99.7%',
-    realtime: true,
-    selfLearning: true,
+export const config = {
+  appName: 'ScamGuard AI',
+  version: '3.0.0',
+  description: 'Hyper-optimized DistilBERT + URLNet Co-Attention neural network for real-time phishing and scam detection',
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  modelInfo: {
+    textEncoder: 'DistilBERT',
+    urlEncoder: 'URLNet',
+    fusion: 'Co-Attention',
+    params: '~66M',
   },
-} as const;
+};

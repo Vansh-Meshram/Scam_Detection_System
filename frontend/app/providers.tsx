@@ -8,7 +8,8 @@ export function Providers({ children }: { children: ReactNode }) {
   const { isDarkMode } = useAppStore();
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDarkMode);
+    // Always enforce dark mode for cyberpunk theme
+    document.documentElement.classList.add('dark');
   }, [isDarkMode]);
 
   return (
@@ -19,17 +20,19 @@ export function Providers({ children }: { children: ReactNode }) {
         toastOptions={{
           duration: 4000,
           style: {
-            background: 'var(--card)',
-            color: 'var(--card-foreground)',
-            border: '1px solid var(--border)',
+            background: 'rgba(10, 17, 40, 0.95)',
+            color: '#e0e8ff',
+            border: '1px solid rgba(0, 240, 255, 0.2)',
             borderRadius: '12px',
             fontSize: '14px',
+            fontFamily: 'Inter, Rajdhani, sans-serif',
+            boxShadow: '0 0 20px rgba(0, 240, 255, 0.1)',
           },
           success: {
-            iconTheme: { primary: '#10B981', secondary: '#fff' },
+            iconTheme: { primary: '#39ff14', secondary: '#060b18' },
           },
           error: {
-            iconTheme: { primary: '#EF4444', secondary: '#fff' },
+            iconTheme: { primary: '#ff073a', secondary: '#060b18' },
           },
         }}
       />

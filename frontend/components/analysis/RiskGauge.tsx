@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface RiskGaugeProps {
-  score: number; // 0.0 - 1.0
+  score: number;
   size?: number;
 }
 
@@ -35,10 +35,10 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
 
   const getRiskInfo = () => {
     if (score <= 0.3)
-      return { label: 'SAFE', color: '#10B981', bgColor: 'rgba(16,185,129,0.1)', icon: '✅', message: 'No immediate threats detected' };
+      return { label: 'CLEAR', color: '#39ff14', message: 'No threats detected in neural scan' };
     if (score <= 0.6)
-      return { label: 'SUSPICIOUS', color: '#F59E0B', bgColor: 'rgba(245,158,11,0.1)', icon: '⚠️', message: 'Proceed with caution' };
-    return { label: 'CRITICAL RISK', color: '#EF4444', bgColor: 'rgba(239,68,68,0.1)', icon: '🚨', message: 'This is likely a SCAM' };
+      return { label: 'CAUTION', color: '#ffe600', message: 'Anomalous signals detected' };
+    return { label: 'CRITICAL', color: '#ff073a', message: 'HIGH THREAT — scam signature confirmed' };
   };
 
   const risk = getRiskInfo();
@@ -48,7 +48,6 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Gauge */}
       <div className="relative" style={{ width: size, height: size }}>
         <svg
           className="transform -rotate-90"
@@ -60,8 +59,8 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
           <circle
             cx="100" cy="100" r={radius}
             fill="none"
-            stroke="var(--secondary)"
-            strokeWidth="12"
+            stroke="rgba(0, 240, 255, 0.06)"
+            strokeWidth="10"
           />
 
           {/* Animated progress */}
@@ -69,30 +68,34 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
             cx="100" cy="100" r={radius}
             fill="none"
             stroke={risk.color}
-            strokeWidth="12"
+            strokeWidth="10"
             strokeLinecap="round"
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
             transition={{ duration: 1.5, ease: 'easeOut' }}
             style={{
               strokeDasharray: circumference,
-              filter: `drop-shadow(0 0 10px ${risk.color}60)`,
+              filter: `drop-shadow(0 0 15px ${risk.color}80)`,
             }}
           />
         </svg>
 
-        {/* Center number */}
+        {/* Center */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
           >
-            <span className="text-5xl font-bold tabular-nums" style={{ color: risk.color }}>
+            <span className="text-5xl font-black tabular-nums"
+              style={{ color: risk.color, fontFamily: 'var(--font-heading)', textShadow: `0 0 30px ${risk.color}60` }}
+            >
               {displayScore}%
             </span>
           </motion.div>
-          <span className="text-sm font-bold mt-1 tracking-wider" style={{ color: risk.color }}>
+          <span className="text-xs font-bold mt-1 tracking-[0.3em]"
+            style={{ color: risk.color, fontFamily: 'var(--font-heading)' }}
+          >
             {risk.label}
           </span>
         </div>
@@ -100,18 +103,21 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
 
       {/* Progress bar */}
       <div className="w-full max-w-xs">
-        <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--secondary)' }}>
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(0, 240, 255, 0.06)' }}>
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${displayScore}%` }}
             transition={{ duration: 1.5, ease: 'easeOut' }}
             className="h-full rounded-full"
-            style={{ background: `linear-gradient(90deg, #10B981, #F59E0B, ${risk.color})` }}
+            style={{
+              background: `linear-gradient(90deg, #39ff14, #ffe600, ${risk.color})`,
+              boxShadow: `0 0 10px ${risk.color}60`,
+            }}
           />
         </div>
-        <div className="flex justify-between mt-1 text-xs" style={{ color: 'var(--muted-foreground)' }}>
-          <span>Safe</span>
-          <span>Critical</span>
+        <div className="flex justify-between mt-1 text-[10px] tracking-wider uppercase" style={{ color: 'var(--muted-foreground)', fontFamily: 'var(--font-heading)' }}>
+          <span>SAFE</span>
+          <span>CRITICAL</span>
         </div>
       </div>
 
@@ -123,13 +129,15 @@ export default function RiskGauge({ score, size = 220 }: RiskGaugeProps) {
           transition={{ delay: 1 }}
           className={`px-5 py-2.5 rounded-full border flex items-center gap-2 ${score > 0.7 ? 'pulse-danger' : ''}`}
           style={{
-            background: risk.bgColor,
+            background: `${risk.color}10`,
             borderColor: `${risk.color}40`,
           }}
         >
-          <span className="text-lg">{risk.icon}</span>
-          <span className="font-semibold text-sm" style={{ color: risk.color }}>
-            HIGH CONFIDENCE: {risk.message}
+          <span className="text-lg">⚠</span>
+          <span className="font-bold text-xs tracking-wider uppercase"
+            style={{ color: risk.color, fontFamily: 'var(--font-heading)' }}
+          >
+            {risk.message}
           </span>
         </motion.div>
       )}
