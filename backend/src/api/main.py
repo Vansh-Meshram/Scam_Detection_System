@@ -30,6 +30,9 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://nextjs:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+        "http://nextjs:3001",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -88,6 +91,47 @@ def predict(req: PredictRequest):
         url_featurizer=url_featurizer,
         device=device,
     )
+
+    # ════════════════════════════════════════════════════════════
+    #  Integrate Sklearn URL Model Ensembling
+    # ════════════════════════════════════════════════════════════
+    from src.api.dependencies import get_sklearn_url_model, get_sklearn_vectorizer
+    url_model_sklearn = get_sklearn_url_model()
+    url_vec = get_sklearn_vectorizer()
+
+    if req.url and url_model_sklearn and url_vec:
+        try:
+            # Strip http://, https://, and www. to match the SkLearn model's training data features.
+            import re
+            cleaned_url = re.sub(r"^https?://", "", req.url)
+            cleaned_url = re.sub(r"^www\.", "", cleaned_url)
+
+            # Vectorize the cleaned URL and predict class probability.
+            transformed = url_vec.transform([cleaned_url])
+            probs = url_model_sklearn.predict_proba(transformed)[0]
+            
+            # class 1 is typically phishing
+            sklearn_score = float(probs[1])
+            
+            # Ensemble: Calculate a weighted average (e.g. 50% Sklearn, 50% Neural)
+            current_score = result["risk_score"]
+            new_score = (current_score * 0.5) + (sklearn_score * 0.5)
+            
+            # Additional heuristic: If sklearn score is extremely high / low, trust it more.
+            if sklearn_score > 0.85:
+                 new_score = (current_score * 0.3) + (sklearn_score * 0.7)
+            elif sklearn_score < 0.15:
+                 new_score = (current_score * 0.3) + (sklearn_score * 0.7)
+                 
+            result["risk_score"] = round(min(0.99, max(0.01, new_score)), 4)
+            result["is_scam"] = result["risk_score"] > 0.65
+            
+            # Append to explanation
+            sk_expl = f"SkLearn LogReg Analysis -> Risk: {sklearn_score:.2%}."
+            result["explanation"] += " " + sk_expl
+
+        except Exception as e:
+            pass # ignore errors and fallback to original score
 
     return PredictResponse(
         risk_score=result["risk_score"],
