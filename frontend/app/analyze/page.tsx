@@ -46,7 +46,7 @@ export default function ThreatScanner() {
     const safeFetch = async (url: string, options: any) => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         const res = await fetch(url, { ...options, signal: controller.signal });
         clearTimeout(timeoutId);
         return res;
@@ -74,12 +74,16 @@ export default function ThreatScanner() {
         return dp[s1.length][s2.length];
       };
 
-      const visualNormalize = (text: string) => 
-        text.replace(/0/g, 'o').replace(/1/g, 'l').replace(/I/g, 'l').replace(/5/g, 's').replace(/8/g, 'b');
+      // Full leet-speak normalization for both URLs and text
+      const normalizeLeet = (text: string) => 
+        text.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e')
+            .replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't')
+            .replace(/8/g, 'b').replace(/9/g, 'g').replace(/@/g, 'a')
+            .replace(/\$/g, 's').replace(/!/g, 'i').replace(/\|/g, 'l');
 
       const brands = ["google", "amazon", "paypal", "facebook", "flipkart", "microsoft", "apple"];
       const hostname = isUrl ? (val.replace(/https?:\/\//, "").split("/")[0].split(".")[0]) : "";
-      const normHostname = visualNormalize(hostname);
+      const normHostname = normalizeLeet(hostname);
 
       let similarityHit = false;
       let hitBrand = "";
@@ -87,7 +91,7 @@ export default function ThreatScanner() {
       if (hostname) {
         for (const brand of brands) {
           const distOrig = getLevenshtein(hostname, brand);
-          const distNorm = getLevenshtein(normHostname, visualNormalize(brand));
+          const distNorm = getLevenshtein(normHostname, normalizeLeet(brand));
           if ((distOrig > 0 && distOrig <= 2) || (distNorm === 0 && hostname !== brand)) {
             similarityHit = true; hitBrand = brand; break;
           }
@@ -97,20 +101,45 @@ export default function ThreatScanner() {
         }
       }
 
+      // Normalize the entire input for keyword matching (catches leet-speak in text)
+      const normalizedLower = normalizeLeet(lowerInput);
+
+      // Verify OTP against the ORIGINAL input (lowerInput) so we don't lose digits to normalizeLeet
+      const isOtpOverride = (
+        (normalizedLower.includes("verification code") || normalizedLower.includes("otp") || normalizedLower.includes("security code")) &&
+        /\b\d{4,8}\b/.test(lowerInput)
+      ) || (
+        /\b\d{4,8}\b/.test(lowerInput) &&
+        (normalizedLower.includes("do not share") || normalizedLower.includes("don't share") || normalizedLower.includes("never share"))
+      );
+
+      if (!isUrl && isOtpOverride && !similarityHit) {
+        return {
+          risk_score: 0.02 + Math.random() * 0.05,
+          is_scam: false,
+          explanation: "Standard authentication/verification sequence detected. Trust signals established."
+        };
+      }
+
+      const scamKeywords = [
+        "verify", "verification", "update", "security", "alert", "warning",
+        "login", "support", "free", "gift-card", "kyc", "bank", "upi-",
+        "urgently", "act now", "urgent", "blocked", "frozen", "suspend",
+        "account", "identity", "immediately", "click", "link", "password",
+        "confirm", "expire", "unauthorized", "limit", "restrict", "fund"
+      ];
+      
+      const hasScamKeyword = scamKeywords.some(kw => normalizedLower.includes(kw));
+      // Count how many scam keywords match (more = more suspicious)
+      const matchCount = scamKeywords.filter(kw => normalizedLower.includes(kw)).length;
+
       const isSuspicious = similarityHit || 
         val.includes(".tk") || val.includes(".xyz") || val.includes(".ru") || 
         val.includes(".ga") || val.includes(".click") || val.includes(".net") ||
-        lowerInput.includes("verify") || lowerInput.includes("verification") || 
-        lowerInput.includes("update") || lowerInput.includes("security") || 
-        lowerInput.includes("alert") || lowerInput.includes("warning") ||
-        lowerInput.includes("login") || lowerInput.includes("support") || 
-        lowerInput.includes("free") || lowerInput.includes("gift-card") ||
-        lowerInput.includes("kyc") || lowerInput.includes("amaz0n") || 
-        lowerInput.includes("paypa1") || lowerInput.includes("sbi-") ||
-        lowerInput.includes("bank") || lowerInput.includes("upi-") ||
+        hasScamKeyword ||
+        lowerInput.includes("amaz0n") || lowerInput.includes("paypa1") || lowerInput.includes("sbi-") ||
         (lowerInput.includes("paypal") && !lowerInput.includes("paypal.com")) ||
-        (lowerInput.includes("amazon") && !lowerInput.includes("amazon.in") && !lowerInput.includes("amazon.com")) ||
-        lowerInput.includes("urgently") || lowerInput.includes("act now");
+        (lowerInput.includes("amazon") && !lowerInput.includes("amazon.in") && !lowerInput.includes("amazon.com"));
 
       return isSuspicious
         ? {
